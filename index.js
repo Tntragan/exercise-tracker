@@ -28,7 +28,8 @@ const exerciseSchema = new mongoose.Schema({
   username: { type: String, required: true },
   description: { type: String, required: true },
   duration: { type: Number, required: true },
-  date: Date
+  date: Date,
+  userId: String
 });
 
 const Person = mongoose.model('Person', peopleSchema);
@@ -78,7 +79,8 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
         username: user.username,
         description,
         duration: Number(duration),
-        date: date
+        date: date ? new Date(date.replace(/-/g, '\/')).toDateString() : new Date().toDateString(),
+        userId: user._id
       })
       await exerciseObj.save()
       res.json({
@@ -92,8 +94,48 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   } catch (err) {
     console.log(err);
   }
-
 });
+
+app.get('/api/users/:_id/logs', async (req, res) => {
+  const id = req.params._id;
+  const { from, to, limit } = req.query;
+  try {
+    const user = await Person.findById(id);
+    if (!user) {
+      res.send("No user exists with that Id!")
+    } else {
+      // const logs = await Exercise.find().where({ userId: id });
+      let dateObj = {};
+      if (from) {
+        dateObj["$gte"] = new Date(from);
+      }
+      if (to) {
+        dateObj["$lte"] = new Date(to);
+      }
+      let filter = { userId: id };
+      if (from || to) {
+        filter.date = dateObj
+      }
+
+      const logs = await Exercise.find(filter).limit(+limit ?? 500);
+
+      const allLogs = logs.map((e) => ({
+        description: e.description,
+        duration: Number(e.duration),
+        date: e.date.toDateString()
+      }))
+      const logsObj = ({
+        username: user.username,
+        count: logs.length,
+        _id: user._id,
+        log: allLogs
+      })
+      res.json(logsObj)
+    }
+  } catch (err) {
+    console.log(err);
+  }
+})
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
