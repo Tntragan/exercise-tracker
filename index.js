@@ -14,15 +14,26 @@ const peopleSchema = new mongoose.Schema({
   }
 });
 
+// const logSchema = new mongoose.Schema({
+//   username: { type: String, required: true },
+//   count: Number,
+//   log: [{
+//     description: String,
+//     duration: Number,
+//     date: String
+//   }]
+// });
+
 const exerciseSchema = new mongoose.Schema({
   username: { type: String, required: true },
   description: { type: String, required: true },
   duration: { type: Number, required: true },
-  date: { type: String, default: new Date().toDateString() },
-})
+  date: Date
+});
 
 const Person = mongoose.model('Person', peopleSchema);
 const Exercise = mongoose.model('Exercise', exerciseSchema);
+// const Log = mongoose.model('Log', logSchema);
 
 app.use(cors())
 app.use(express.static('public'))
@@ -35,13 +46,12 @@ app.get('/', (req, res) => {
 app.get('/api/users', async (req, res) => {
   const allUsers = await Person.find({});
   res.json(allUsers)
-})
+});
 
 app.post('/api/users', async (req, res) => {
   const person = new Person(req.body);
   const personExists = await Person.find({ username: person.username }).count() > 0;
   if (!personExists) {
-    console.log("He exists")
     await person.save()
     res.json({
       username: person.username,
@@ -52,22 +62,38 @@ app.post('/api/users', async (req, res) => {
       error: "Person already exists!"
     })
   }
+});
 
+app.post('/api/users/:_id/exercises', async (req, res) => {
+  const id = req.params._id;
+  const { description, duration, date } = req.body;
+  console.log(req.body);
 
-  // person.save()
-  //   .then((result) => {
-  //     res.json({
-  //       username: person,
-  //       _id
-  //     });
-  //   })
-  //   .catch((err) => {
-  //     console.log(err);
-  //   });
-})
+  try {
+    const user = await Person.findById(id);
+    if (!user) {
+      res.send("Could not find user!");
+    } else {
+      const exerciseObj = new Exercise({
+        username: user.username,
+        description,
+        duration: Number(duration),
+        date: date
+      })
+      await exerciseObj.save()
+      res.json({
+        username: user.username,
+        description,
+        duration: Number(duration),
+        date: date ? new Date(date.replace(/-/g, '\/')).toDateString() : new Date().toDateString(),
+        _id: id
+      })
+    }
+  } catch (err) {
+    console.log(err);
+  }
 
-
-
+});
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
