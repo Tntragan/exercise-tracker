@@ -14,16 +14,6 @@ const peopleSchema = new mongoose.Schema({
   }
 });
 
-// const logSchema = new mongoose.Schema({
-//   username: { type: String, required: true },
-//   count: Number,
-//   log: [{
-//     description: String,
-//     duration: Number,
-//     date: String
-//   }]
-// });
-
 const exerciseSchema = new mongoose.Schema({
   username: { type: String, required: true },
   description: { type: String, required: true },
@@ -34,7 +24,6 @@ const exerciseSchema = new mongoose.Schema({
 
 const Person = mongoose.model('Person', peopleSchema);
 const Exercise = mongoose.model('Exercise', exerciseSchema);
-// const Log = mongoose.model('Log', logSchema);
 
 app.use(cors())
 app.use(express.static('public'))
@@ -104,7 +93,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (!user) {
       res.send("No user exists with that Id!")
     } else {
-      // const logs = await Exercise.find().where({ userId: id });
       let dateObj = {};
       if (from) {
         dateObj["$gte"] = new Date(from);
