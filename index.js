@@ -14,7 +14,15 @@ const peopleSchema = new mongoose.Schema({
   }
 });
 
+const exerciseSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  description: { type: String, required: true },
+  duration: { type: Number, required: true },
+  date: { type: String, default: new Date().toDateString() },
+})
+
 const Person = mongoose.model('Person', peopleSchema);
+const Exercise = mongoose.model('Exercise', exerciseSchema);
 
 app.use(cors())
 app.use(express.static('public'))
@@ -23,6 +31,11 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
+
+app.get('/api/users', async (req, res) => {
+  const allUsers = await Person.find({});
+  res.json(allUsers)
+})
 
 app.post('/api/users', async (req, res) => {
   const person = new Person(req.body);
