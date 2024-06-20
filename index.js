@@ -9,22 +9,48 @@ mongoose.connect(process.env.MONGO_URI);
 const peopleSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true
-  },
-  _id: String
+    required: true,
+    unique: true
+  }
 });
 
 const Person = mongoose.model('Person', peopleSchema);
 
 app.use(cors())
 app.use(express.static('public'))
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
-app.post('/api/users', (req, res) => {
+app.post('/api/users', async (req, res) => {
+  const person = new Person(req.body);
+  const personExists = await Person.find({ username: person.username }).count() > 0;
+  if (!personExists) {
+    console.log("He exists")
+    await person.save()
+    res.json({
+      username: person.username,
+      _id: person._id
+    })
+  } else {
+    res.json({
+      error: "Person already exists!"
+    })
+  }
 
+
+  // person.save()
+  //   .then((result) => {
+  //     res.json({
+  //       username: person,
+  //       _id
+  //     });
+  //   })
+  //   .catch((err) => {
+  //     console.log(err);
+  //   });
 })
 
 
